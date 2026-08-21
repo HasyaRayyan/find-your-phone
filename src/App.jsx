@@ -53,6 +53,7 @@ export default function App() {
   const audioCtxRef = useRef(null);
   const intervalRef = useRef(null);
   const watchIdRef = useRef(null);
+  const channelRef = useRef(null);
 
   useEffect(() => {
     fetchDevices();
@@ -126,9 +127,14 @@ export default function App() {
       );
     }
 
+    // Clean up previous channel if it exists
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
     // Subscribe to target device updates
-    const channel = supabase
-      .channel('schema-db-changes')
+    channelRef.current = supabase
+      .channel(`device-${id}`)
       .on(
         'postgres_changes',
         {
@@ -188,6 +194,10 @@ export default function App() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (watchIdRef.current && navigator.geolocation) {
       navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
     setView('dashboard');
     setTargetLocation(null);
